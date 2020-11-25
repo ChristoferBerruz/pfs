@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"os"
 	"strings"
+
+	pfs "github.com/ChristoferBerruz/portable_file_system/pfs"
 )
 
 func main() {
@@ -18,6 +20,6 @@ func main() {
 		}
 
 		fmt.Printf("Executing command ... %s\n", args[0])
-
+		pfs.TestFCB()
 	}
 }
