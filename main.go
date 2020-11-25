@@ -1,44 +1,23 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
 	"os"
-
-	fcb "github.com/ChristoferBerruz/portable_file_system/fcb"
+	"strings"
 )
 
-func fileExists(filename string) bool {
-	info, err := os.Stat(filename)
-	if os.IsNotExist(err) {
-		return false
-	}
-
-	return !info.IsDir()
-}
-
-func createFile(filename string) {
-	fd, err := os.Create(filename)
-
-	if err != nil {
-		panic(err)
-	}
-
-	if err := fd.Truncate(1e4); err != nil {
-		panic(err)
-	}
-
-	fmt.Println("File successfully created.")
-}
-
 func main() {
+	reader := bufio.NewReader(os.Stdin)
+	for {
+		shellInput, _ := reader.ReadString('\n')
+		shellInput = strings.TrimRight(shellInput, "\r\n")
+		args := strings.Split(shellInput, " ")
+		if args[0] == "exit" {
+			break
+		}
 
-	filename := ".pfs"
-	if !fileExists(filename) {
-		fmt.Println("PFS not found. Creating PFS...")
-		createFile(filename)
+		fmt.Printf("Executing command ... %s\n", args[0])
+
 	}
-
-	block := fcb.NewFCB("test.txt", 32, 0, 0)
-	fmt.Println(block)
-	fmt.Println("Portable file system!")
 }
