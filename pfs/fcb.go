@@ -3,19 +3,11 @@ package pfs
 import (
 	"bytes"
 	"encoding/binary"
+	"errors"
 	"fmt"
 	"log"
 	"os"
 	"time"
-)
-
-// Sizes are number of bytes
-const (
-	dateTimeFormat     string = "2006-01-02 15:04:05"
-	createDateTimeSize        = 19
-	fileNameSize              = 20
-	remarksSize               = 22
-	fcbDiskSize               = 64
 )
 
 // FCB represents a logical, in RAM, File Control Block.
@@ -26,40 +18,44 @@ type FCB struct {
 	FileSize        uint16
 	StartingBlockID uint8
 	Remarks         [remarksSize]byte
+	CanBeWritten    bool
+}
+
+func invalidSizeMessage(variableName string, size int) string {
+	return fmt.Sprintf("%s should be <= than %d in bytes", variableName, size)
 }
 
 // NewFCB returns a new FCB struct taking the datetime as now()
-func NewFCB(fileName string, fileSize uint16, startingBlockID uint8) FCB {
+func NewFCB(fileName string, fileSize uint16, startingBlockID uint8) (FCB, error) {
+
+	if fileNameSize-len(fileName) < 0 {
+		return FCB{}, errors.New(invalidSizeMessage("FileName", fileNameSize))
+	}
 
 	block := FCB{
 		FileSize:        fileSize,
 		StartingBlockID: startingBlockID,
-	}
-	// Transforming fileName to []byte
-	var fnameBuf [len(block.FileName)]byte
-	for i := 0; i < len(fileName); i++ {
-		fnameBuf[i] = fileName[i]
+		CanBeWritten:    false,
 	}
 
-	// Creating a timestamp and storing it into []byte
-	var dateTimeBuf [len(block.CreateDateTime)]byte
+	// Populating the []byte for FileName
+	for i := 0; i < len(fileName); i++ {
+		block.FileName[i] = fileName[i]
+	}
+
+	// Populating the []byte for CreateDateTime
 	dateString := time.Now().Format(dateTimeFormat)
 	for i := 0; i < len(dateString); i++ {
-		dateTimeBuf[i] = dateString[i]
+		block.CreateDateTime[i] = dateString[i]
 	}
 
-	var remarks [len(block.Remarks)]byte
-
-	block.FileName = fnameBuf
-	block.CreateDateTime = dateTimeBuf
-	block.Remarks = remarks
-	return block
+	return block, nil
 }
 
 // ReadFCBFromDisk reads bytes from file at offset and returns an instance of FCB
-func ReadFCBFromDisk(file *os.File, offset int64) FCB {
+func ReadFCBFromDisk(file *os.File, offset int64) (FCB, error) {
 	if _, err := file.Seek(offset, 0); err != nil {
-		log.Fatal(err)
+		return FCB{}, err
 	}
 
 	// Reading information to a buffer
@@ -70,9 +66,9 @@ func ReadFCBFromDisk(file *os.File, offset int64) FCB {
 	var block FCB
 	reader := bytes.NewReader(buf)
 	if err := binary.Read(reader, binary.LittleEndian, &block); err != nil {
-		fmt.Println("Binary read failed: ", err)
+		return FCB{}, err
 	}
-	return block
+	return block, nil
 }
 
 // WriteToDisk writes a logcal FCB to the filesystem
@@ -89,6 +85,7 @@ func (block FCB) WriteToDisk(file *os.File, offset int64) {
 		block.FileSize,
 		block.StartingBlockID,
 		block.Remarks,
+		block.CanBeWritten,
 	}
 
 	// Storing values into buffer
@@ -109,15 +106,31 @@ func (block FCB) String() string {
 		block.FileSize, block.StartingBlockID, block.Remarks)
 }
 
+// ModifyRemarks adds remarks in FCB in place
+func (block *FCB) ModifyRemarks(remarks string) error {
+	if remarksSize-len(remarks) < 0 {
+		return errors.New(invalidSizeMessage("Remarks", remarksSize))
+	}
+	for i := 0; i < len(remarks); i++ {
+		block.Remarks[i] = remarks[i]
+	}
+	return nil
+}
+
 // TestFCB is a simple test for FCB
 func TestFCB() {
-	file, _ := os.OpenFile(".pfs", os.O_RDWR, 0644)
-	block := NewFCB("test.txt", 12, 3)
+	file, err := os.OpenFile(".pfs", os.O_RDWR, 0644)
+	if err != nil {
+		fmt.Println(err)
+	}
+	block, err := NewFCB("test.txt", 12, 3)
+	if err != nil {
+		fmt.Println(err)
+	}
 	block.WriteToDisk(file, 0)
-	block3 := NewFCB("del.txt", 17, 5)
-	block3.WriteToDisk(file, 64)
-	block2 := ReadFCBFromDisk(file, 0)
-	block4 := ReadFCBFromDisk(file, 64)
+	block1, _ := ReadFCBFromDisk(file, 0)
+	fmt.Println(block1)
+	block.WriteToDisk(file, 64)
+	block2, _ := ReadFCBFromDisk(file, 64)
 	fmt.Println(block2)
-	fmt.Println(block4)
 }
