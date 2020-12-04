@@ -20,6 +20,8 @@ func main() {
 		}
 
 		fmt.Printf("Executing command ... %s\n", args[0])
-		pfs.TestFCB()
+		//pfs.TestFCB()
+		//pfs.TestDirectoryCreation()
+		pfs.TestDirectory()
 	}
 }
