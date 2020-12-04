@@ -5,7 +5,8 @@ import (
 	"os"
 )
 
-func fileExists(filename string) bool {
+// FileExists checks whethere the fileName exists in current directory
+func FileExists(filename string) bool {
 	info, err := os.Stat(filename)
 	if os.IsNotExist(err) {
 		return false
@@ -14,16 +15,18 @@ func fileExists(filename string) bool {
 	return !info.IsDir()
 }
 
-func createFile(filename string) {
+// CreateFile creates a 10KB volume
+func CreateFile(filename string) error {
 	fd, err := os.Create(filename)
 
 	if err != nil {
-		panic(err)
+		return err
 	}
 
 	if err := fd.Truncate(1e4); err != nil {
-		panic(err)
+		return err
 	}
 
-	fmt.Println("File successfully created.")
+	fmt.Printf("Sucessfully created %s volume\n", filename)
+	return nil
 }

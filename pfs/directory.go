@@ -8,13 +8,6 @@ import (
 	"os"
 )
 
-// Metadata contains a summary of the volume
-type Metadata struct {
-	NameOfVolume        [nameOfVolumeSize]byte
-	DataInitialAddress  uint16
-	NumberOfFilesStored uint8
-}
-
 // Directory contains data structures and metadata for the volume
 type Directory struct {
 	Metadata           Metadata
@@ -22,17 +15,17 @@ type Directory struct {
 	FCBArray           [totalDataBlocks]FCB
 }
 
-// NewMetadata returns a new metadata instance
-func NewMetadata(nameOfVolume string) Metadata {
-	var nameOfVolumeAsArray [nameOfVolumeSize]byte
-	for i := 0; i < len(nameOfVolume); i++ {
-		nameOfVolumeAsArray[i] = nameOfVolume[i]
+// NewDirectory creates pfs directory
+func NewDirectory(volName string) Directory {
+	metadata := NewMetadata(volName)
+	directory := Directory{
+		Metadata: metadata,
 	}
-	return Metadata{
-		NameOfVolume:        nameOfVolumeAsArray,
-		DataInitialAddress:  dataAddress,
-		NumberOfFilesStored: 0,
+	for idx := range directory.FreeDataBlockArray {
+		directory.FreeDataBlockArray[idx] = true
 	}
+
+	return directory
 }
 
 // ReadDirectoryFromDisk reads a directory from Disk
@@ -84,10 +77,6 @@ func (directory Directory) WriteToDisk(file *os.File) {
 
 }
 
-func (metadata Metadata) String() string {
-	return fmt.Sprintf("Name of volume: %s\nDataInitialAddress:%d\nFiles Stored:%d\n",
-		metadata.NameOfVolume, metadata.DataInitialAddress, metadata.NumberOfFilesStored)
-}
 func (directory Directory) String() string {
 	return fmt.Sprintf("Directory Information\n%s", directory.Metadata)
 }

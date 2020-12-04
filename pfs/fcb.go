@@ -13,41 +13,92 @@ import (
 // FCB represents a logical, in RAM, File Control Block.
 // We use byte arrays to easily read and write to/from the pfd
 type FCB struct {
-	FileName        [fileNameSize]byte
-	CreateDateTime  [createDateTimeSize]byte
-	FileSize        uint16
-	StartingBlockID uint8
-	Remarks         [remarksSize]byte
-	CanBeWritten    bool
+	FileName          [fileNameSize]byte
+	CreateDateTime    [createDateTimeSize]byte
+	FileSize          uint16
+	StartingBlockID   uint8
+	Remarks           [remarksSize]byte
+	ContainsValidData bool
 }
 
-func invalidSizeMessage(variableName string, size int) string {
-	return fmt.Sprintf("%s should be <= than %d in bytes", variableName, size)
+func (fcb *FCB) setFileName(fileName string) error {
+	if fileNameSize-len(fileName) < 0 {
+		return errors.New(invalidSizeMessage("FileName", fileNameSize))
+	}
+
+	for i := 0; i < len(fileName); i++ {
+		(*fcb).FileName[i] = fileName[i]
+	}
+
+	return nil
+}
+
+func (fcb FCB) getFileName() string {
+	b := make([]byte, fileNameSize)
+
+	for i := 0; i < fileNameSize; i++ {
+		b[i] = fcb.FileName[i]
+	}
+	return string(b)
+}
+
+func (fcb FCB) getCreateDateTime() string {
+	b := make([]byte, createDateTimeSize)
+
+	for i := 0; i < createDateTimeSize; i++ {
+		b[i] = fcb.CreateDateTime[i]
+	}
+
+	return string(b)
+}
+
+func (fcb *FCB) setCreateDateTime(dateTime string) error {
+	if createDateTimeSize-len(dateTime) < 0 {
+		return errors.New(invalidSizeMessage("CreateDateTime", createDateTimeSize))
+	}
+
+	for i := 0; i < len(dateTime); i++ {
+		(*fcb).CreateDateTime[i] = dateTime[i]
+	}
+
+	return nil
+}
+
+func (fcb FCB) getRemarks() string {
+	b := make([]byte, remarksSize)
+	for i := 0; i < remarksSize; i++ {
+		b[i] = fcb.Remarks[i]
+	}
+
+	return string(b)
+}
+
+func (fcb *FCB) setRemarks(remarks string) error {
+	if remarksSize-len(remarks) < 0 {
+		return errors.New(invalidSizeMessage("Remarks", remarksSize))
+	}
+	for i := 0; i < len(remarks); i++ {
+		(*fcb).Remarks[i] = remarks[i]
+	}
+	return nil
 }
 
 // NewFCB returns a new FCB struct taking the datetime as now()
 func NewFCB(fileName string, fileSize uint16, startingBlockID uint8) (FCB, error) {
 
-	if fileNameSize-len(fileName) < 0 {
-		return FCB{}, errors.New(invalidSizeMessage("FileName", fileNameSize))
-	}
-
 	block := FCB{
-		FileSize:        fileSize,
-		StartingBlockID: startingBlockID,
-		CanBeWritten:    false,
+		FileSize:          fileSize,
+		StartingBlockID:   startingBlockID,
+		ContainsValidData: true,
 	}
 
-	// Populating the []byte for FileName
-	for i := 0; i < len(fileName); i++ {
-		block.FileName[i] = fileName[i]
+	err := (&block).setFileName(fileName)
+	if err != nil {
+		return FCB{}, err
 	}
 
-	// Populating the []byte for CreateDateTime
 	dateString := time.Now().Format(dateTimeFormat)
-	for i := 0; i < len(dateString); i++ {
-		block.CreateDateTime[i] = dateString[i]
-	}
+	(&block).setCreateDateTime(dateString)
 
 	return block, nil
 }
@@ -72,7 +123,7 @@ func ReadFCBFromDisk(file *os.File, offset int64) (FCB, error) {
 }
 
 // WriteToDisk writes a logcal FCB to the filesystem
-func (block FCB) WriteToDisk(file *os.File, offset int64) {
+func (fcb FCB) WriteToDisk(file *os.File, offset int64) {
 
 	if _, err := file.Seek(offset, 0); err != nil {
 		log.Fatal(err)
@@ -80,12 +131,12 @@ func (block FCB) WriteToDisk(file *os.File, offset int64) {
 
 	buf := new(bytes.Buffer)
 	var data = []interface{}{
-		block.FileName,
-		block.CreateDateTime,
-		block.FileSize,
-		block.StartingBlockID,
-		block.Remarks,
-		block.CanBeWritten,
+		fcb.FileName,
+		fcb.CreateDateTime,
+		fcb.FileSize,
+		fcb.StartingBlockID,
+		fcb.Remarks,
+		fcb.ContainsValidData,
 	}
 
 	// Storing values into buffer
@@ -101,20 +152,9 @@ func (block FCB) WriteToDisk(file *os.File, offset int64) {
 
 }
 
-func (block FCB) String() string {
-	return fmt.Sprintf("%s %2s %d %d %s", block.FileName, block.CreateDateTime,
-		block.FileSize, block.StartingBlockID, block.Remarks)
-}
-
-// ModifyRemarks adds remarks in FCB in place
-func (block *FCB) ModifyRemarks(remarks string) error {
-	if remarksSize-len(remarks) < 0 {
-		return errors.New(invalidSizeMessage("Remarks", remarksSize))
-	}
-	for i := 0; i < len(remarks); i++ {
-		block.Remarks[i] = remarks[i]
-	}
-	return nil
+func (fcb FCB) String() string {
+	return fmt.Sprintf("%s %2s %d %d %s\n", fcb.FileName, fcb.CreateDateTime,
+		fcb.FileSize, fcb.StartingBlockID, fcb.Remarks)
 }
 
 // TestFCB is a simple test for FCB
