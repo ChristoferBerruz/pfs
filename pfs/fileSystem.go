@@ -148,6 +148,37 @@ func (fileSystem *FileSystem) Put(fileName string) {
 	(*fileSystem).Directory.Metadata.NumberOfFilesStored++
 }
 
+// RemoveFile removes a file from file system
+func (fileSystem *FileSystem) RemoveFile(fileName string) {
+
+	lenOfName := len(fileName)
+
+	for idx, fcb := range (*fileSystem).Directory.FCBArray {
+
+		nameTruncated := string(fcb.getFileName()[0:lenOfName])
+
+		if fcb.ContainsValidData && (nameTruncated == fileName) {
+			// We found the file so we have to mark the fcb as invalid
+			// AND the blocks of data as free
+			// And modify metadata information
+			(*fileSystem).Directory.FCBArray[idx].ContainsValidData = false
+
+			// Setting the data blocks as free
+			numberOfBlocks := uint8(math.Ceil(float64(fcb.FileSize) / float64(dataBlockSize)))
+			for i := uint8(0); i < numberOfBlocks; i++ {
+				(*fileSystem).Directory.FreeDataBlockArray[fcb.StartingBlockID+i] = true
+			}
+
+			// Set directory number of files in system
+			(*fileSystem).Directory.Metadata.NumberOfFilesStored--
+			fmt.Printf("Sucessfully removed %s from file system\n", fileName)
+			return
+		}
+	}
+	fmt.Println("File does not exist in filesystem. Nothing to delete.")
+
+}
+
 // Dir shows files available in the file system
 func (fileSystem *FileSystem) Dir() {
 	result := ""
