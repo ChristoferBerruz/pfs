@@ -69,6 +69,7 @@ func (fileSystem *FileSystem) Kill(volName string) {
 	if FileExists(volName) {
 		if (*fileSystem).PfsFile != nil && (*fileSystem).VolumeName == volName {
 			(*fileSystem).PfsFile.Close()
+			(*fileSystem).PfsFile = nil
 		}
 
 		err := os.Remove(volName)
@@ -195,6 +196,46 @@ func (fileSystem *FileSystem) PutRemarks(fileName string, remarks string) {
 				return
 			}
 			fmt.Println("Sucessfully modified remarks")
+			return
+		}
+	}
+
+	fmt.Println("Files does not exist in file something. Nothing to change")
+}
+
+// MoveOut moves fileName from .pfs to current directory
+func (fileSystem *FileSystem) MoveOut(fileName string) {
+
+	lenOfName := len(fileName)
+
+	for _, fcb := range (*fileSystem).Directory.FCBArray {
+
+		nameTruncated := string(fcb.getFileName()[0:lenOfName])
+
+		if fcb.ContainsValidData && (nameTruncated == fileName) {
+			blockID := fcb.StartingBlockID
+			lenOfData := fcb.FileSize
+			offset := dataAddress + uint16(blockID)*dataBlockSize
+
+			buf := make([]byte, lenOfData)
+
+			(*fileSystem).PfsFile.Seek(int64(offset), 0)
+
+			(*fileSystem).PfsFile.Read(buf)
+
+			// Create file
+			file, err := os.Create(fileName)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+
+			// Everything is good, so flush
+			file.Write(buf)
+			file.Close()
+
+			// We moved it, so lets get' remove the file internally
+			fileSystem.RemoveFile(fileName)
 			return
 		}
 	}
