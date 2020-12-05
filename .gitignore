@@ -1,2 +1,3 @@
-.pfs
+.*
+*.txt
 portable_file_system
