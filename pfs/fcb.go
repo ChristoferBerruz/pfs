@@ -34,22 +34,11 @@ func (fcb *FCB) setFileName(fileName string) error {
 }
 
 func (fcb FCB) getFileName() string {
-	b := make([]byte, fileNameSize)
-
-	for i := 0; i < fileNameSize; i++ {
-		b[i] = fcb.FileName[i]
-	}
-	return string(b)
+	return fmt.Sprintf("%s", fcb.FileName)
 }
 
 func (fcb FCB) getCreateDateTime() string {
-	b := make([]byte, createDateTimeSize)
-
-	for i := 0; i < createDateTimeSize; i++ {
-		b[i] = fcb.CreateDateTime[i]
-	}
-
-	return string(b)
+	return fmt.Sprintf("%s", fcb.CreateDateTime)
 }
 
 func (fcb *FCB) setCreateDateTime(dateTime string) error {
@@ -65,12 +54,7 @@ func (fcb *FCB) setCreateDateTime(dateTime string) error {
 }
 
 func (fcb FCB) getRemarks() string {
-	b := make([]byte, remarksSize)
-	for i := 0; i < remarksSize; i++ {
-		b[i] = fcb.Remarks[i]
-	}
-
-	return string(b)
+	return fmt.Sprintf("%s", fcb.Remarks)
 }
 
 func (fcb *FCB) setRemarks(remarks string) error {

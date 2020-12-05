@@ -20,7 +20,7 @@ func handleCommands(args []string) {
 	case "get":
 		fmt.Println("get")
 	case "rm":
-		fmt.Println("Remove")
+		(&fileSystem).RemoveFile(args[1])
 	case "dir":
 		(&fileSystem).Dir()
 	case "putr":
