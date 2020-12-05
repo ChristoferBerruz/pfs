@@ -4,7 +4,9 @@ import (
 	"bufio"
 	"fmt"
 	"os"
+	"os/signal"
 	"strings"
+	"syscall"
 
 	"github.com/ChristoferBerruz/portable_file_system/pfs"
 )
@@ -50,7 +52,21 @@ func handleCommands(args []string) {
 	}
 }
 
+func keyboardInterrupHandler() {
+	c := make(chan os.Signal)
+	signal.Notify(c, os.Interrupt, syscall.SIGTERM)
+	go func() {
+		<-c
+		fileSystem.Quit()
+		os.Exit(0)
+	}()
+}
+
 func main() {
+
+	// In case we close abruptly
+	keyboardInterrupHandler()
+
 	reader := bufio.NewReader(os.Stdin)
 	shellPrompt := "pfs > "
 	for {
