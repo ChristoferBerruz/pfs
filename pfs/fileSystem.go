@@ -179,6 +179,29 @@ func (fileSystem *FileSystem) RemoveFile(fileName string) {
 
 }
 
+// PutRemarks modifies a FCB to set different remarks
+func (fileSystem *FileSystem) PutRemarks(fileName string, remarks string) {
+
+	lenOfName := len(fileName)
+
+	for idx, fcb := range (*fileSystem).Directory.FCBArray {
+
+		nameTruncated := string(fcb.getFileName()[0:lenOfName])
+
+		if fcb.ContainsValidData && (nameTruncated == fileName) {
+			err := (*fileSystem).Directory.FCBArray[idx].setRemarks(remarks)
+			if err != nil {
+				fmt.Println(err)
+				return
+			}
+			fmt.Println("Sucessfully modified remarks")
+			return
+		}
+	}
+
+	fmt.Println("Files does not exist in file something. Nothing to change")
+}
+
 // Dir shows files available in the file system
 func (fileSystem *FileSystem) Dir() {
 	result := ""
