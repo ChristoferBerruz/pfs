@@ -152,13 +152,9 @@ func (fileSystem *FileSystem) Put(fileName string) {
 // RemoveFile removes a file from file system
 func (fileSystem *FileSystem) RemoveFile(fileName string) {
 
-	lenOfName := len(fileName)
-
 	for idx, fcb := range (*fileSystem).Directory.FCBArray {
 
-		nameTruncated := string(fcb.getFileName()[0:lenOfName])
-
-		if fcb.ContainsValidData && (nameTruncated == fileName) {
+		if fcb.ContainsValidData && (fcb.getFileName() == fileName) {
 			// We found the file so we have to mark the fcb as invalid
 			// AND the blocks of data as free
 			// And modify metadata information
@@ -183,13 +179,9 @@ func (fileSystem *FileSystem) RemoveFile(fileName string) {
 // PutRemarks modifies a FCB to set different remarks
 func (fileSystem *FileSystem) PutRemarks(fileName string, remarks string) {
 
-	lenOfName := len(fileName)
-
 	for idx, fcb := range (*fileSystem).Directory.FCBArray {
 
-		nameTruncated := string(fcb.getFileName()[0:lenOfName])
-
-		if fcb.ContainsValidData && (nameTruncated == fileName) {
+		if fcb.ContainsValidData && (fcb.getFileName() == fileName) {
 			err := (*fileSystem).Directory.FCBArray[idx].setRemarks(remarks)
 			if err != nil {
 				fmt.Println(err)
@@ -206,13 +198,9 @@ func (fileSystem *FileSystem) PutRemarks(fileName string, remarks string) {
 // MoveOut moves fileName from .pfs to current directory
 func (fileSystem *FileSystem) MoveOut(fileName string) {
 
-	lenOfName := len(fileName)
-
 	for _, fcb := range (*fileSystem).Directory.FCBArray {
 
-		nameTruncated := string(fcb.getFileName()[0:lenOfName])
-
-		if fcb.ContainsValidData && (nameTruncated == fileName) {
+		if fcb.ContainsValidData && (fcb.getFileName() == fileName) {
 			blockID := fcb.StartingBlockID
 			lenOfData := fcb.FileSize
 			offset := dataAddress + uint16(blockID)*dataBlockSize
@@ -248,7 +236,8 @@ func (fileSystem *FileSystem) Dir() {
 	result := ""
 	for _, fcb := range (*fileSystem).Directory.FCBArray {
 		if fcb.ContainsValidData {
-			result += fcb.String()
+			result += fmt.Sprintf("%-20s   %-19s   %21s\n", fcb.getFileName(),
+				fcb.getCreateDateTime(), fcb.getRemarks())
 		}
 	}
 	fmt.Println(result)

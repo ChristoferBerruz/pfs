@@ -37,7 +37,14 @@ func (metadata *Metadata) setNameOfVolume(volName string) error {
 }
 
 func (metadata Metadata) getNameOfVolume() string {
-	return fmt.Sprintf("%s", metadata.NameOfVolume)
+	dataLength := 0
+	for i := 0; i < len(metadata.NameOfVolume); i++ {
+		if metadata.NameOfVolume[i] == 0 {
+			break
+		}
+		dataLength++
+	}
+	return fmt.Sprintf("%s", metadata.NameOfVolume[0:dataLength])
 }
 func (metadata Metadata) String() string {
 	return fmt.Sprintf("Name of volume: %s\nDataInitialAddress:%d\nFiles Stored:%d\n",
