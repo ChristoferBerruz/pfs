@@ -69,7 +69,7 @@ func (fileSystem *FileSystem) Kill(volName string) {
 	if FileExists(volName) {
 		if (*fileSystem).PfsFile != nil && (*fileSystem).VolumeName == volName {
 			(*fileSystem).PfsFile.Close()
-			(*fileSystem).PfsFile = nil
+			(*fileSystem) = FileSystem{}
 		}
 
 		err := os.Remove(volName)

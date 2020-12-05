@@ -9,24 +9,42 @@ import (
 	"github.com/ChristoferBerruz/portable_file_system/pfs"
 )
 
-var fileSystem = pfs.FileSystem{}
+var fileSystem = &pfs.FileSystem{}
+
+func argsHasNArguments(args []string, n int) bool {
+	return len(args) == n
+}
 
 func handleCommands(args []string) {
 	switch args[0] {
 	case "open":
-		(&fileSystem).OpenVolume(args[1])
+		if argsHasNArguments(args, 2) {
+			fileSystem.OpenVolume(args[1])
+		}
 	case "put":
-		(&fileSystem).Put(args[1])
+		if argsHasNArguments(args, 2) {
+			fileSystem.Put(args[1])
+		}
 	case "get":
-		fmt.Println("get")
+		if argsHasNArguments(args, 2) {
+			fileSystem.MoveOut(args[1])
+		}
 	case "rm":
-		(&fileSystem).RemoveFile(args[1])
+		if argsHasNArguments(args, 2) {
+			fileSystem.RemoveFile(args[1])
+		}
 	case "dir":
-		(&fileSystem).Dir()
+		if argsHasNArguments(args, 1) {
+			fileSystem.Dir()
+		}
 	case "putr":
-		fmt.Println("Putr...")
+		if argsHasNArguments(args, 3) {
+			fileSystem.PutRemarks(args[1], args[2])
+		}
 	case "kill":
-		(&fileSystem).Kill(args[1])
+		if argsHasNArguments(args, 2) {
+			fileSystem.Kill(args[1])
+		}
 	default:
 		fmt.Println("Command is not valid!")
 	}
@@ -40,9 +58,15 @@ func main() {
 		shellInput, _ := reader.ReadString('\n')
 		shellInput = strings.TrimRight(shellInput, "\r\n")
 		args := strings.Split(shellInput, " ")
+
+		// In case of empty enter
+		if args[0] == "" {
+			continue
+		}
+
 		if args[0] == "quit" {
-			if fileSystem.PfsFile != nil {
-				(&fileSystem).Quit()
+			if (*fileSystem).PfsFile != nil {
+				fileSystem.Quit()
 			}
 			break
 		}
