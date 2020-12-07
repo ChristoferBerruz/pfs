@@ -87,6 +87,5 @@ func main() {
 			break
 		}
 		handleCommands(args)
-		//pfs.TestDirectory()
 	}
 }
